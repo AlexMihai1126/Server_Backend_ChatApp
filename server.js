@@ -1,38 +1,45 @@
-require('dotenv').config();
 const express = require("express");
-const { Sequelize } = require('sequelize');
-const mongoose = require('mongoose');
+const { sequelize, connectToDatabase } = require('./database');
+const { connectMongooseDb } = require('./mongoose');
+const User = require('./sequelize_models/user');
 
-const MONGO_URI = `mongodb+srv://${process.env.MONGODB_USER}:${process.env.MONGODB_PASS}@cluster0.mdjrlpo.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`
-
-mongoose
-  .connect(MONGO_URI, {dbName:`${process.env.MONGODB_DBNAME}`})
-  .then(() => {
-    console.log(`Connected to MongoDB Cloud.`);
-  })
-  .catch(err => {
-    console.log("Error connecting to MongoDB Cloud with error: " ,err.message);
-  });
-
-
-const sequelize = new Sequelize(`postgres://${process.env.POSTGRES_USER}:${process.env.POSTGRES_PASSWORD}@localhost:5432/${process.env.POSTGRES_DBNAME}`)
-
-try {
-  sequelize.authenticate();
-  console.log('Connected to Postgres DB.');
-} catch (error) {
-  console.error('Unable to connect to Postgres DB: ', error);
-}
-
-app= express();
+const app = express();
 const PORT = process.env.APP_PORT;
 
-app.get(["/api/get"], function(req, res){
-    
-    res.json({"message":"RSD"})
-        
-});
+async function syncDb(){
+  await sequelize.sync({ force: true });
+  console.log('All models were synchronized successfully.');
+}
 
-app.listen(PORT, ()=>{
-    console.log(`Serverul a pornit, port: ${PORT}`);
+async function startServer() {
+  try {
+    await connectToDatabase();
+    await connectMongooseDb();
+    
+    app.listen(PORT, () => {
+      console.log(`Serverul a pornit, port: ${PORT}`);
+      console.log("MAMA CE IMI PLACE POLITIA");
+    });
+  } catch (error) {
+    console.error('Error starting server:', error);
+  }
+}
+
+startServer();
+
+app.get('/test', async (req, res) => {
+  try {
+    const newUser = await User.create({
+      username: 'john_doe',
+      email: 'john@example.com',
+      password: 'password123',
+      nume: 'John',
+      prenume: 'Doe'
+    });
+    
+    res.json(newUser);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
 });
