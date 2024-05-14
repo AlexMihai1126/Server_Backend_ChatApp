@@ -6,7 +6,7 @@ async function sendConfirmationEmail(email,token) {
         const confirmationLink = `localhost:${process.env.APP_PORT}/confirm?token=${token}`;
 
         await transporter.sendMail({
-            from: `${process.env.MAIL}`, // Sender email address
+            from: `${process.env.EMAIL}`, // Sender email address
             to: email, // Recipient email address
             subject: 'Confirmation Email',
             text: 'Please confirm your email address by clicking the link below:',
