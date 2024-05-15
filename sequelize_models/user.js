@@ -38,7 +38,7 @@ const User = sequelize.define('User', {
     defaultValue: false
   },
   creationToken:{
-    type: DataTypes.UUIDV4,
+    type: DataTypes.UUID,
     allowNull:false
   }
 }, {});
