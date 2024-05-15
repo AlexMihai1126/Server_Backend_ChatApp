@@ -10,20 +10,22 @@ const jwt = require('jsonwebtoken');
 const { v4: uuidv4 } = require('uuid');
 const bodyParser = require('body-parser');
 const cors = require('cors');
-const multer = require('multer'); // for handling file uploads
+const multer = require('multer');
 const path = require('path');
-const fs = require('fs'); // for file operations
+const fs = require('fs');
+const { Op, json } = require('sequelize');
+const sendConfirmationEmail = require('./nodemailer/sender');
+const { error } = require("console");
 
-if(!fs.existsSync("./uploads")){
+if (!fs.existsSync("./uploads")) {
   fs.mkdirSync("uploads");
 }
 
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    cb(null, 'uploads/'); // Destination folder for uploaded files
+    cb(null, 'uploads/');
   },
   filename: (req, file, cb) => {
-    // Generate a unique filename for the uploaded file
     const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
     const ext = path.extname(file.originalname);
     cb(null, file.fieldname + '-' + uniqueSuffix + ext);
@@ -45,6 +47,7 @@ async function syncDb() {
   await sequelize.sync({ force: true });
   console.log('All models were synchronized successfully.');
 }
+
 
 async function startServer() {
   try {
@@ -99,6 +102,10 @@ app.post('/api/register', async (req, res) => {
 });
 
 app.post('/api/login', async (req, res) => {
+  if (Object.keys(req.body).length === 0) {
+    return res.status(400).json({ error: 'Request body is empty' });
+  }
+
   const { email, password } = req.body;
 
   try {
@@ -106,13 +113,19 @@ app.post('/api/login', async (req, res) => {
     if (!user) {
       return res.status(401).json({ error: 'Invalid email or password' });
     }
+
+    if (!user.confirmed) {
+      return res.status(403).json({ error: 'Account not confirmed' });
+    }
+
     const passwordMatch = await bcrypt.compare(password, user.password);
     if (!passwordMatch) {
       return res.status(401).json({ error: 'Invalid email or password' });
     }
 
-    const token = jwt.sign({ email }, process.env.JWT_SECRET, { expiresIn: '1h' });
-
+    const tokenPayload = { email: user.email, username: user.username };
+    const token = jwt.sign(tokenPayload, process.env.JWT_SECRET, { expiresIn: '1h' });
+    
     res.status(200).json({ token });
   } catch (error) {
     console.error('Login error:', error);
@@ -120,19 +133,23 @@ app.post('/api/login', async (req, res) => {
   }
 });
 
+
 app.get('/confirm', async (req, res) => {
   const { token } = req.query;
-  if (token != undefined) {
-    const user = await User.findOne({ where: { confirmationToken: token } });
-
+  const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+  if (uuidPattern.test(token)) {
+    const user = await User.findOne({ where: { creationToken: token } });
     if (!user) {
       return res.status(400).json({ error: 'Invalid token' });
+    } else {
+      if (user.confirmed == true) {
+        return res.status(400).json({ error: 'Already confirmed' });
+      } else {
+        user.confirmed = true;
+        await user.save();
+        res.status(200).json({ message: 'Email confirmed successfully' });
+      }
     }
-
-    user.confirmed = true;
-    await user.save();
-
-    res.status(200).json({ message: 'Email confirmed successfully' });
   } else {
     res.status(400).json({ message: "Bad request." });
   }
@@ -154,9 +171,15 @@ app.post('/api/messages/save', async (req, res) => {
 
 app.post('/api/media/upload', upload.single('file'), async (req, res) => {
   try {
-    const newMedia = await Media.create({ filePath: req.file.path });
+    if (!req.file) {
+      return res.status(400).json({ error: 'No file uploaded' });
+    }
+    const newMedia = new Media({
+      filePath: req.file.path, // Store file path
+    });
+    await newMedia.save();
 
-    res.status(201).json(newMedia);
+    res.status(201).json({uploadedFileId:newMedia._id});
   } catch (error) {
     console.error('Error uploading media:', error);
     res.status(500).json({ error: 'An internal server error occurred' });
@@ -175,4 +198,3 @@ app.delete('/api/messages/:id', async (req, res) => {
     res.status(500).json({ error: 'An internal server error occurred' });
   }
 });
-
