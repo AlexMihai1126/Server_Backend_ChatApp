@@ -8,17 +8,20 @@ const User = require('./sequelize_models/user');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const { v4: uuidv4 } = require('uuid');
-const bodyParser = require('body-parser');
 const cors = require('cors');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
-const { Op, json } = require('sequelize');
+const { Op } = require('sequelize');
 const sendConfirmationEmail = require('./nodemailer/sender');
-const { error } = require("console");
+const sharp = require('sharp');
 
 if (!fs.existsSync("./uploads")) {
   fs.mkdirSync("uploads");
+}
+
+if (!fs.existsSync("./uploads/rescaled")) {
+  fs.mkdirSync("uploads/rescaled");
 }
 
 const storage = multer.diskStorage({
@@ -133,7 +136,6 @@ app.post('/api/login', async (req, res) => {
   }
 });
 
-
 app.get('/confirm', async (req, res) => {
   const { token } = req.query;
   const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -156,35 +158,65 @@ app.get('/confirm', async (req, res) => {
 
 });
 
-app.post('/api/messages/save', async (req, res) => {
-  const { senderId, recipientId, content, mediaId } = req.body;
-
-  try {
-    const newMessage = await Message.create({ senderId, recipientId, content, mediaId });
-
-    res.status(201).json(newMessage);
-  } catch (error) {
-    console.error('Error saving message:', error);
-    res.status(500).json({ error: 'An internal server error occurred' });
-  }
-});
-
 app.post('/api/media/upload', upload.single('file'), async (req, res) => {
   try {
     if (!req.file) {
       return res.status(400).json({ error: 'No file uploaded' });
     }
+    const filePath = req.file.path;
+    const fileName = req.file.filename;
+
+    const resizedFileName = `rescaled_${fileName}`;
+    const resizedFilePath = path.join('uploads', 'rescaled', resizedFileName);
+    await sharp(filePath)
+      .resize({ width: 1280 })
+      .toFile(resizedFilePath);
+
     const newMedia = new Media({
-      filePath: req.file.path, // Store file path
+      uploadedFileName: fileName
     });
     await newMedia.save();
 
-    res.status(201).json({uploadedFileId:newMedia._id});
+    res.status(201).json({ uploadedFileId: newMedia._id });
   } catch (error) {
     console.error('Error uploading media:', error);
     res.status(500).json({ error: 'An internal server error occurred' });
   }
 });
+
+app.get('/api/media/view/full/:id', async (req, res) => {
+  try {
+    const mediaId = req.params.id;
+    const media = await Media.findById(mediaId);
+
+    if (!media) {
+      return res.status(404).json({ error: 'Media not found' });
+    }
+    const fileToSend = path.join(__dirname,"uploads", media.uploadedFileName);
+    res.sendFile(fileToSend);
+  } catch (error) {
+    console.error('Error retrieving media:', error);
+    res.status(500).json({ error: 'An internal server error occurred' });
+  }
+});
+
+app.get('/api/media/view/resized/:id', async (req, res) => {
+  try {
+    const mediaId = req.params.id;
+    const media = await Media.findById(mediaId);
+
+    if (!media) {
+      return res.status(404).json({ error: 'Media not found' });
+    }
+    const resizedFileName = `rescaled_${media.uploadedFileName}`;
+    const resizedFilePath = path.join(__dirname,'uploads', 'rescaled', resizedFileName);
+    res.sendFile(resizedFilePath);
+  } catch (error) {
+    console.error('Error retrieving media:', error);
+    res.status(500).json({ error: 'An internal server error occurred' });
+  }
+});
+
 
 app.delete('/api/messages/:id', async (req, res) => {
   const { id } = req.params;
@@ -198,3 +230,17 @@ app.delete('/api/messages/:id', async (req, res) => {
     res.status(500).json({ error: 'An internal server error occurred' });
   }
 });
+
+app.post('/api/messages/save', async (req, res) => {
+  const { senderId, recipientId, content, mediaId } = req.body;
+
+  try {
+    const newMessage = await Message.create({ senderId, recipientId, content, mediaId });
+
+    res.status(201).json(newMessage);
+  } catch (error) {
+    console.error('Error saving message:', error);
+    res.status(500).json({ error: 'An internal server error occurred' });
+  }
+});
+
