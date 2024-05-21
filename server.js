@@ -17,12 +17,15 @@ if (!fs.existsSync("./uploads/rescaled")) {
 }
 
 const app = express();
+app.use(cors({
+  origin: `*`,
+  methods: ['GET', 'POST','DELETE'],
+  allowedHeaders:['sessionId', 'Content-Type'],
+  exposedHeaders: ['sessionId'],
+}));
+app.options('*', cors());
 app.use(express.json({ limit: '50mb' })); // Increase the JSON payload limit
 app.use(express.urlencoded({ extended: true, limit: '50mb' })); // Increase the URL-encoded payload limit
-app.use(cors({
-  origin: `localhost:${process.env.APP_PORT}`,
-  methods: ['GET', 'POST']
-}));
 
 app.use('/user', userRoutes);
 app.use('/api/messages', messageRoutes);
