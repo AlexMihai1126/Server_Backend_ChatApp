@@ -8,6 +8,8 @@ const imageRoutes = require('./routes/imageRoutes');
 const mediaRoutes = require('./routes/mediaRoutes');
 const fs = require('fs');
 
+const syncDbFlag = 0;
+
 if (!fs.existsSync("./uploads")) {
   fs.mkdirSync("uploads");
 }
@@ -43,6 +45,10 @@ async function startServer() {
   try {
     await connectToDatabase();
     await connectMongooseDb();
+
+    if(syncDbFlag == 1){
+      syncDb();
+    }
 
     app.listen(PORT, () => {
       console.log(`Serverul a pornit, port: ${PORT}`);
