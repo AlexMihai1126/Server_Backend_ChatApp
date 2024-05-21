@@ -159,34 +159,7 @@ app.get('/confirm', async (req, res) => {
 
 });
 
-app.post('/api/media/upload', upload.single('file'), async (req, res) => {
-  try {
-    if (!req.file) {
-      return res.status(400).json({ error: 'No file uploaded' });
-    }
-    const filePath = req.file.path;
-    const fileName = req.file.filename;
-
-    /* const resizedFileName = `rescaled_${fileName}`;
-    const resizedFilePath = path.join('uploads', 'rescaled', resizedFileName);
-    await sharp(filePath)
-      .resize({ width: 1280 })
-      .toFile(resizedFilePath);
-    */
-   
-    const newMedia = new Media({
-      uploadedFileName: fileName
-    });
-    await newMedia.save();
-
-    res.status(201).json({ uploadedFileId: newMedia._id });
-  } catch (error) {
-    console.error('Error uploading media:', error);
-    res.status(500).json({ error: 'An internal server error occurred' });
-  }
-});
-
-app.post('/api/image/uploadb64', async (req, res) => {
+app.post('/api/images/uploadb64', async (req, res) => {
   const authorizationHeader = req.headers.authorization;
 
   if (!authorizationHeader) {
@@ -228,7 +201,34 @@ app.post('/api/image/uploadb64', async (req, res) => {
   }
 });
 
-app.get('/api/media/view/full/:id', async (req, res) => {
+app.delete('/api/images/delete/:id', async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const mediaToDelete = await Media.findByIdAndDelete(id);
+
+    if (!mediaToDelete) {
+      return res.status(404).json({ error: 'Media not found.' });
+    }
+
+    const filePath = path.join(__dirname, 'uploads', mediaToDelete.uploadedFileName);
+    const resizedFilePath = path.join(__dirname, 'uploads', 'rescaled', `rescaled_${mediaToDelete.uploadedFileName}`);
+
+    try {
+      await fs.promises.unlink(filePath);
+      await fs.promises.unlink(resizedFilePath);
+      res.status(200).json({ message: 'Media and files deleted successfully' });
+    } catch (fileError) {
+      console.error('Error deleting files:', fileError);
+      res.status(500).json({ error: 'Error deleting files from the server' });
+    }
+  } catch (error) {
+    console.error('Error deleting media:', error);
+    res.status(500).json({ error: 'An internal server error occurred' });
+  }
+});
+
+app.get('/api/image/view/full/:id', async (req, res) => {
   try {
     const mediaId = req.params.id;
     const media = await Media.findById(mediaId);
@@ -244,7 +244,7 @@ app.get('/api/media/view/full/:id', async (req, res) => {
   }
 });
 
-app.get('/api/media/view/resized/:id', async (req, res) => {
+app.get('/api/image/view/resized/:id', async (req, res) => {
   try {
     const mediaId = req.params.id;
     const media = await Media.findById(mediaId);
@@ -261,14 +261,18 @@ app.get('/api/media/view/resized/:id', async (req, res) => {
   }
 });
 
-
-app.delete('/api/messages/:id', async (req, res) => {
+app.delete('/api/messages/delete/:id', async (req, res) => {
   const { id } = req.params;
 
   try {
-    await Message.findByIdAndDelete(id);
+    const messageToDelete = await Message.findByIdAndDelete(id);
 
-    res.status(200).json({ message: 'Message deleted successfully' });
+    if(messageToDelete == null){
+      res.status(404).json({error: 'Message not found.'});
+    } else{
+      res.status(200).json({ message: 'Message deleted successfully' });
+    }
+
   } catch (error) {
     console.error('Error deleting message:', error);
     res.status(500).json({ error: 'An internal server error occurred' });
@@ -281,7 +285,7 @@ app.post('/api/messages/save', async (req, res) => {
   try {
     const newMessage = await Message.create({ senderId, recipientId, content, mediaId });
 
-    res.status(201).json(newMessage);
+    res.status(201).json({message:newMessage});
   } catch (error) {
     console.error('Error saving message:', error);
     res.status(500).json({ error: 'An internal server error occurred' });
