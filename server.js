@@ -38,7 +38,8 @@ const storage = multer.diskStorage({
 const upload = multer({ storage });
 
 const app = express();
-app.use(express.json());
+app.use(express.json({ limit: '50mb' })); // Increase the JSON payload limit
+app.use(express.urlencoded({ extended: true, limit: '50mb' })); // Increase the URL-encoded payload limit
 app.use(cors({
   origin: `localhost:${process.env.APP_PORT}`,
   methods: ['GET', 'POST']
@@ -128,7 +129,7 @@ app.post('/api/login', async (req, res) => {
 
     const tokenPayload = { email: user.email, username: user.username };
     const token = jwt.sign(tokenPayload, process.env.JWT_SECRET, { expiresIn: '1h' });
-    
+
     res.status(200).json({ token });
   } catch (error) {
     console.error('Login error:', error);
@@ -166,14 +167,57 @@ app.post('/api/media/upload', upload.single('file'), async (req, res) => {
     const filePath = req.file.path;
     const fileName = req.file.filename;
 
-    const resizedFileName = `rescaled_${fileName}`;
+    /* const resizedFileName = `rescaled_${fileName}`;
     const resizedFilePath = path.join('uploads', 'rescaled', resizedFileName);
+    await sharp(filePath)
+      .resize({ width: 1280 })
+      .toFile(resizedFilePath);
+    */
+   
+    const newMedia = new Media({
+      uploadedFileName: fileName
+    });
+    await newMedia.save();
+
+    res.status(201).json({ uploadedFileId: newMedia._id });
+  } catch (error) {
+    console.error('Error uploading media:', error);
+    res.status(500).json({ error: 'An internal server error occurred' });
+  }
+});
+
+app.post('/api/image/uploadb64', async (req, res) => {
+  const authorizationHeader = req.headers.authorization;
+
+  if (!authorizationHeader) {
+    return res.status(401).json({ error: 'Authorization header is required' });
+  }
+
+  try {
+    const { image, fileName } = req.body;
+
+    if (!image || !fileName) {
+      return res.status(400).json({ error: 'Image and filename are required' });
+    }
+
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    const ext = path.extname(fileName);
+    const standardFileName = `file-${uniqueSuffix}${ext}`;
+    const filePath = path.join('uploads', standardFileName);
+
+    const buffer = Buffer.from(image, 'base64');
+
+    await fs.promises.writeFile(filePath, buffer);
+
+    const resizedFileName = `rescaled_${standardFileName}`;
+    const resizedFilePath = path.join('uploads', 'rescaled', resizedFileName);
+
     await sharp(filePath)
       .resize({ width: 1280 })
       .toFile(resizedFilePath);
 
     const newMedia = new Media({
-      uploadedFileName: fileName
+      uploadedFileName: standardFileName
     });
     await newMedia.save();
 
@@ -192,7 +236,7 @@ app.get('/api/media/view/full/:id', async (req, res) => {
     if (!media) {
       return res.status(404).json({ error: 'Media not found' });
     }
-    const fileToSend = path.join(__dirname,"uploads", media.uploadedFileName);
+    const fileToSend = path.join(__dirname, "uploads", media.uploadedFileName);
     res.sendFile(fileToSend);
   } catch (error) {
     console.error('Error retrieving media:', error);
@@ -209,7 +253,7 @@ app.get('/api/media/view/resized/:id', async (req, res) => {
       return res.status(404).json({ error: 'Media not found' });
     }
     const resizedFileName = `rescaled_${media.uploadedFileName}`;
-    const resizedFilePath = path.join(__dirname,'uploads', 'rescaled', resizedFileName);
+    const resizedFilePath = path.join(__dirname, 'uploads', 'rescaled', resizedFileName);
     res.sendFile(resizedFilePath);
   } catch (error) {
     console.error('Error retrieving media:', error);
