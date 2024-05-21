@@ -3,7 +3,7 @@ require('dotenv').config();
 
 async function sendConfirmationEmail(email,token) {
     try {
-        const confirmationLink = `localhost:${process.env.APP_PORT}/confirm?token=${token}`;
+        const confirmationLink = `localhost:${process.env.APP_PORT}/user/confirm?token=${token}`;
 
         await transporter.sendMail({
             from: `${process.env.EMAIL}`, // Sender email address
