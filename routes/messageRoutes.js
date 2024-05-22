@@ -1,6 +1,5 @@
 const express = require('express');
 const router = express.Router();
-const { Media } = require('../mongo_models/media');
 const { Message } = require('../mongo_models/message');
 const { Conversation } = require('../mongo_models/conversation');
 
@@ -37,9 +36,21 @@ router.delete('/delete/:id', async (req, res) => {
     }
 });
 
-router.get('/get/conversation/:id', async (req, res) =>{
+router.get('/get/conversation/:id', async (req, res) => {
     //gets all messages from a conversation with a given id
     //will check that the user that's logged in is part of the conversation before sending any data
+    try {
+        const chatId = req.params.id;
+        const chat = await Conversation.findById(chatId);
+
+        if (!chat) {
+            return res.status(404).json({ error: 'Chat not found' });
+        }
+        return res.status(200).json(chat);
+    } catch (error) {
+        console.error('Error retrieving chat:', error);
+        res.status(500).json({ error: 'An internal server error occurred' });
+    }
 });
 
 module.exports = router;
