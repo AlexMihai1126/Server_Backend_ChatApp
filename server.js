@@ -1,5 +1,4 @@
 const express = require("express");
-const { sequelize, connectToDatabase } = require('./database');
 const { connectMongooseDb } = require('./mongoose');
 const cors = require('cors');
 const userRoutes = require('./routes/userRoutes');
@@ -7,8 +6,6 @@ const messageRoutes = require('./routes/messageRoutes');
 const imageRoutes = require('./routes/imageRoutes');
 const mediaRoutes = require('./routes/mediaRoutes');
 const fs = require('fs');
-
-const syncDbFlag = 0;
 
 if (!fs.existsSync("./uploads")) {
   fs.mkdirSync("uploads");
@@ -36,19 +33,10 @@ app.use('/api/images', imageRoutes);
 
 const PORT = process.env.APP_PORT;
 
-async function syncDb() {
-  await sequelize.sync({ force: true });
-  console.log('All models were synchronized successfully.');
-}
 
 async function startServer() {
   try {
-    await connectToDatabase();
     await connectMongooseDb();
-
-    if(syncDbFlag == 1){
-      syncDb();
-    }
 
     app.listen(PORT, () => {
       console.log(`Serverul a pornit, port: ${PORT}`);
