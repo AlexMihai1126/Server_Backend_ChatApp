@@ -3,7 +3,7 @@ const router = express.Router();
 const path = require('path');
 const fs = require('fs');
 const sharp = require('sharp');
-const { Media } = require('../mongo_models/media');
+const { Media } = require('../db_models/media');
 
 router.post('/uploadb64', async (req, res) => {
   const authorizationHeader = req.headers.authorization;

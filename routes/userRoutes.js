@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const User = require('../mongo_models/User');
+const User = require('../db_models/User');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const { v4: uuidv4 } = require('uuid');
@@ -67,6 +67,25 @@ router.post('/login', async (req, res) => {
   } catch (error) {
     console.error('Login error:', error);
     res.status(500).json({ error: 'An internal server error occurred' });
+  }
+});
+
+router.delete('/delete/:id', async (req, res) => {
+  //will check that the user that is logged in is the owner of the account
+  const { id } = req.params;
+
+  try {
+      const userToDelete = await User.findByIdAndDelete(id);
+
+      if (userToDelete == null) {
+          res.status(404).json({ error: 'User not found.' });
+      } else {
+          res.status(200).json({ message: 'User deleted successfully' });
+      }
+
+  } catch (error) {
+      console.error('Error deleting user:', error);
+      res.status(500).json({ error: 'An internal server error occurred' });
   }
 });
 

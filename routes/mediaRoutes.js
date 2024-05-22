@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const multer = require('multer');
 const path = require('path');
-const { Media } = require('../mongo_models/media');
+const { Media } = require('../db_models/media');
 const fs = require('fs');
 
 const storage = multer.diskStorage({

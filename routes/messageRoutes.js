@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
-const { Message } = require('../mongo_models/message');
-const { Conversation } = require('../mongo_models/conversation');
+const { Message } = require('../db_models/message');
+const { Conversation } = require('../db_models/conversation');
 
 router.post('/save', async (req, res) => {
     //will check that the user that is logged in is the one sending the message
