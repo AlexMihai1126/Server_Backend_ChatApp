@@ -98,6 +98,10 @@ router.get('/confirm', async (req, res) => {
 
 });
 
+router.get("/conversations", async (req, res) =>{
+  //get all the user's conversations (for the current logged in user with JWT)
+})
+
 
 const checkToken = (req, res, next) => {
   const header = req.headers['authorization'];

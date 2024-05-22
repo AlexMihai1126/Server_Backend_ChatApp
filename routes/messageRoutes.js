@@ -5,6 +5,7 @@ const { Message } = require('../mongo_models/message');
 const { Conversation } = require('../mongo_models/conversation');
 
 router.post('/save', async (req, res) => {
+    //will check that the user that is logged in is the one sending the message
     const { senderId, recipientId, content, mediaId } = req.body;
 
     try {
@@ -18,6 +19,7 @@ router.post('/save', async (req, res) => {
 });
 
 router.delete('/delete/:id', async (req, res) => {
+    //will check that the user that is logged in is the owner of the message
     const { id } = req.params;
 
     try {
@@ -33,6 +35,11 @@ router.delete('/delete/:id', async (req, res) => {
         console.error('Error deleting message:', error);
         res.status(500).json({ error: 'An internal server error occurred' });
     }
+});
+
+router.get('/get/conversation/:id', async (req, res) =>{
+    //gets all messages from a conversation with a given id
+    //will check that the user that's logged in is part of the conversation before sending any data
 });
 
 module.exports = router;
