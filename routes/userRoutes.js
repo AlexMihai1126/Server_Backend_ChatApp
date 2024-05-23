@@ -10,7 +10,7 @@ router.post('/register', async (req, res) => {
   const { nume, prenume, username, email, password } = req.body;
 
   try {
-    const existingUser = await User.findOne({ $or: [{ username: username }, { email: email }] }).lean();
+    const existingUser = await User.findOne({ $or: [{ username: username }, { email: email }] });
 
     if (existingUser) {
       return res.status(400).json({ error: 'Username or email is already taken' });
@@ -71,7 +71,6 @@ router.post('/login', async (req, res) => {
 });
 
 router.delete('/delete/:id', async (req, res) => {
-  //will check that the user that is logged in is the owner of the account
   const { id } = req.params;
 
   try {

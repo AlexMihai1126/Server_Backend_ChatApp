@@ -4,7 +4,8 @@ const cors = require('cors');
 const userRoutes = require('./routes/userRoutes');
 const messageRoutes = require('./routes/messageRoutes');
 const imageRoutes = require('./routes/imageRoutes');
-const mediaRoutes = require('./routes/mediaRoutes');
+//const mediaRoutes = require('./routes/mediaRoutes');
+const conversationRoutes = require('./routes/conversationRoutes');
 const fs = require('fs');
 
 if (!fs.existsSync("./uploads")) {
@@ -28,7 +29,8 @@ app.use(express.urlencoded({ extended: true, limit: '50mb' })); // Increase the 
 
 app.use('/user', userRoutes);
 app.use('/api/messages', messageRoutes);
-app.use('/api/media', mediaRoutes);
+app.use('/api/conversations', conversationRoutes);
+//app.use('/api/media', mediaRoutes);
 app.use('/api/images', imageRoutes);
 
 const PORT = process.env.APP_PORT;
