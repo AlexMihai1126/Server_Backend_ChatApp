@@ -6,6 +6,7 @@ const messageRoutes = require('./routes/messageRoutes');
 const imageRoutes = require('./routes/imageRoutes');
 //const mediaRoutes = require('./routes/mediaRoutes');
 const conversationRoutes = require('./routes/conversationRoutes');
+const friendRoutes = require('./routes/friendRoutes');
 const fs = require('fs');
 
 if (!fs.existsSync("./uploads")) {
@@ -32,6 +33,7 @@ app.use('/api/messages', messageRoutes);
 app.use('/api/conversations', conversationRoutes);
 //app.use('/api/media', mediaRoutes);
 app.use('/api/images', imageRoutes);
+app.use('/friends',friendRoutes);
 
 const PORT = process.env.APP_PORT;
 

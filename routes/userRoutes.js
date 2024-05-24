@@ -61,8 +61,8 @@ router.post('/login', async (req, res) => {
       return res.status(401).json({ error: 'Invalid email or password' });
     }
 
-    const tokenPayload = { email: user.email, username: user.username };
-    const token = jwt.sign(tokenPayload, process.env.JWT_SECRET, { expiresIn: '1h' });
+    const tokenPayload = { email: user.email, username: user.username, id: user._id };
+    const token = jwt.sign(tokenPayload, process.env.JWT_SECRET, { expiresIn: '7 days' });
 
     res.status(200).json({ token });
   } catch (error) {
