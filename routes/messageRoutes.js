@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
-const { Message } = require('../db_models/message');
+const { Message } = require('../db_models/Message');
+const checkAuth = require ('../middleware/checkAuth');
 
 router.post('/new', async (req, res) => {
     const { senderId, recipientId, content, mediaId } = req.body;

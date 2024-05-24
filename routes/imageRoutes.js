@@ -3,15 +3,10 @@ const router = express.Router();
 const path = require('path');
 const fs = require('fs');
 const sharp = require('sharp');
-const { Media } = require('../db_models/media');
+const { Media } = require('../db_models/Media');
+const checkAuth = require('../middleware/checkAuth');
 
-router.post('/uploadb64', async (req, res) => {
-  const authorizationHeader = req.headers.authorization;
-
-  if (!authorizationHeader) {
-    return res.status(401).json({ error: 'Authorization header is required' });
-  }
-
+router.post('/uploadb64', checkAuth, async (req, res) => {
   try {
     const { image, fileName } = req.body;
 
@@ -36,7 +31,8 @@ router.post('/uploadb64', async (req, res) => {
       .toFile(resizedFilePath);
 
     const newMedia = new Media({
-      uploadedFileName: standardFileName
+      uploadedFileName: standardFileName,
+      owner:req.user.id
     });
     await newMedia.save();
 
@@ -47,14 +43,19 @@ router.post('/uploadb64', async (req, res) => {
   }
 });
 
-router.delete('/delete/:id', async (req, res) => {
+router.delete('/delete/:id',checkAuth, async (req, res) => {
   const { id } = req.params;
 
   try {
-    const mediaToDelete = await Media.findByIdAndDelete(id);
-
+    const mediaToDelete = await Media.findById(id);
     if (!mediaToDelete) {
       return res.status(404).json({ error: 'Image not found.' });
+    }
+    
+    if(req.user.id == mediaToDelete.owner){
+      await mediaToDelete.deleteOne();
+    }else{
+      return res.status(403).json({error:"Not your file!"});
     }
 
     const filePath = path.join(__dirname, '../uploads', mediaToDelete.uploadedFileName);
