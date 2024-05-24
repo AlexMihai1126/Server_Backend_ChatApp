@@ -5,6 +5,7 @@ const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const { v4: uuidv4 } = require('uuid');
 const sendConfirmationEmail = require('../nodemailer/sender');
+const checkAuth = require('../middleware/checkAuth');
 
 router.post('/register', async (req, res) => {
   const { nume, prenume, username, email, password } = req.body;
@@ -70,21 +71,25 @@ router.post('/login', async (req, res) => {
   }
 });
 
-router.delete('/delete/:id', async (req, res) => {
-  const { id } = req.params;
+router.get('/data', checkAuth, (req, res) => {
+  res.json({
+    message: 'Successful log in',
+    user: req.user
+  });
+});
 
+router.delete('/delete', checkAuth, async (req, res) => {
   try {
-      const userToDelete = await User.findByIdAndDelete(id);
-
-      if (userToDelete == null) {
-          res.status(404).json({ error: 'User not found.' });
-      } else {
-          res.status(200).json({ message: 'User deleted successfully' });
-      }
+    const userToDelete = await User.findOneAndDelete({ username: req.user.username });
+    if (userToDelete == null) {
+      res.status(404).json({ error: 'User not found.' });
+    } else {
+      res.status(200).json({ message: 'User deleted successfully' });
+    }
 
   } catch (error) {
-      console.error('Error deleting user:', error);
-      res.status(500).json({ error: 'An internal server error occurred' });
+    console.error('Error deleting user:', error);
+    res.status(500).json({ error: 'An internal server error occurred' });
   }
 });
 
@@ -113,35 +118,6 @@ router.get('/confirm', async (req, res) => {
     console.error('Confirmation error:', error);
     res.status(500).json({ error: 'An internal server error occurred' });
   }
-});
-
-// Middleware to check JWT token
-const checkToken = (req, res, next) => {
-  const header = req.headers['authorization'];
-
-  if (typeof header !== 'undefined') {
-    const bearer = header.split(' ');
-    const token = bearer[1];
-
-    jwt.verify(token, process.env.JWT_SECRET, (err, decoded) => {
-      if (err) {
-        return res.sendStatus(403);
-      }
-
-      req.user = decoded; // Set the decoded user information in the request
-      next();
-    });
-  } else {
-    res.sendStatus(403);
-  }
-};
-
-// Protected route example
-router.get('/data', checkToken, (req, res) => {
-  res.json({
-    message: 'Successful log in',
-    user: req.user
-  });
 });
 
 module.exports = router;
