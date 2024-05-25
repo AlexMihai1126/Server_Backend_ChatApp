@@ -7,24 +7,23 @@ const { Media } = require('../db_models/Media');
 const checkAuth = require('../middleware/checkAuth');
 
 router.post('/uploadb64', checkAuth, async (req, res) => {
-  try {
-    const { image, fileName } = req.body;
+  const { image, fileName } = req.body;
 
     if (!image || !fileName) {
       return res.status(400).json({ error: 'Image and filename are required' });
     }
-
+  try {
     const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
     const ext = path.extname(fileName);
     const standardFileName = `file-${uniqueSuffix}${ext}`;
-    const filePath = path.join(__dirname,'../uploads', standardFileName);
+    const filePath = path.join(__dirname, '../uploads', standardFileName);
 
     const buffer = Buffer.from(image, 'base64');
 
     await fs.promises.writeFile(filePath, buffer);
 
     const resizedFileName = `rescaled_${standardFileName}`;
-    const resizedFilePath = path.join(__dirname,'../uploads', 'rescaled', resizedFileName);
+    const resizedFilePath = path.join(__dirname, '../uploads', 'rescaled', resizedFileName);
 
     await sharp(filePath)
       .resize({ width: 1280 })
@@ -32,7 +31,7 @@ router.post('/uploadb64', checkAuth, async (req, res) => {
 
     const newMedia = new Media({
       uploadedFileName: standardFileName,
-      owner:req.user.id
+      owner: req.user.id
     });
     await newMedia.save();
 
@@ -43,19 +42,22 @@ router.post('/uploadb64', checkAuth, async (req, res) => {
   }
 });
 
-router.delete('/delete/:id',checkAuth, async (req, res) => {
+router.delete('/delete/:id', checkAuth, async (req, res) => {
   const { id } = req.params;
+  if(!id){
+    return res.status(400).json({error:"Missing ID"});
+  }
 
   try {
     const mediaToDelete = await Media.findById(id);
     if (!mediaToDelete) {
       return res.status(404).json({ error: 'Image not found.' });
     }
-    
-    if(req.user.id == mediaToDelete.owner){
+
+    if (req.user.id == mediaToDelete.owner) {
       await mediaToDelete.deleteOne();
-    }else{
-      return res.status(403).json({error:"Not your file!"});
+    } else {
+      return res.status(403).json({ error: "Not your file!" });
     }
 
     const filePath = path.join(__dirname, '../uploads', mediaToDelete.uploadedFileName);
@@ -76,8 +78,11 @@ router.delete('/delete/:id',checkAuth, async (req, res) => {
 });
 
 router.get('/view/full/:id', async (req, res) => {
+  const mediaId = req.params.id;
+  if (!mediaId) {
+    return res.status(400).json({ error: "Missing ID" });
+  }
   try {
-    const mediaId = req.params.id;
     const media = await Media.findById(mediaId);
 
     if (!media) {
@@ -92,8 +97,11 @@ router.get('/view/full/:id', async (req, res) => {
 });
 
 router.get('/view/resized/:id', async (req, res) => {
+  const mediaId = req.params.id;
+  if (!mediaId) {
+    return res.status(400).json({ error: "Missing ID" });
+  }
   try {
-    const mediaId = req.params.id;
     const media = await Media.findById(mediaId);
 
     if (!media) {

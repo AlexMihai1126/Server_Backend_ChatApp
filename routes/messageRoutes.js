@@ -5,6 +5,9 @@ const checkAuth = require ('../middleware/checkAuth');
 
 router.post('/new', async (req, res) => {
     const { senderId, recipientId, content, mediaId } = req.body;
+    if(!recipientId){
+        return res.status(400).json({error:"No recipient."});
+    }
 
     try {
         const newMessage = await Message.create({ senderId, recipientId, content, mediaId });
@@ -18,11 +21,14 @@ router.post('/new', async (req, res) => {
 
 router.delete('/delete/:id', async (req, res) => {
     const { id } = req.params;
+    if(!id){
+        return res.status(400).json({error:"Missing ID"});
+    }
 
     try {
         const messageToDelete = await Message.findByIdAndDelete(id);
 
-        if (messageToDelete == null) {
+        if (!messageToDelete) {
             res.status(404).json({ error: 'Message not found.' });
         } else {
             res.status(200).json({ message: 'Message deleted successfully' });

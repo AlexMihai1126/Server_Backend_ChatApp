@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const multer = require('multer');
 const path = require('path');
-const { Media } = require('../db_models/media');
+const { Media } = require('../db_models/Media');
 const fs = require('fs');
 
 const storage = multer.diskStorage({
@@ -19,10 +19,10 @@ const storage = multer.diskStorage({
 const upload = multer({ storage });
 
 router.post('/upload', upload.single('file'), async (req, res) => {
+    if (!req.file) {
+        return res.status(400).json({ error: 'No file uploaded' });
+    }
     try {
-        if (!req.file) {
-            return res.status(400).json({ error: 'No file uploaded' });
-        }
         const fileName = req.file.filename;
 
         const newMedia = new Media({
@@ -38,8 +38,12 @@ router.post('/upload', upload.single('file'), async (req, res) => {
 });
 
 router.get('/get/:id', async (req, res) => {
+    const mediaId = req.params.id;
+    if (!mediaId) {
+        return res.status(400).json({ error: "Missing ID" })
+    }
     try {
-        const mediaId = req.params.id;
+
         const media = await Media.findById(mediaId);
 
         if (!media) {
@@ -55,27 +59,29 @@ router.get('/get/:id', async (req, res) => {
 
 router.delete('/delete/:id', async (req, res) => {
     const { id } = req.params;
-  
-    try {
-      const mediaToDelete = await Media.findByIdAndDelete(id);
-  
-      if (!mediaToDelete) {
-        return res.status(404).json({ error: 'Media not found.' });
-      }
-  
-      const filePath = path.join(__dirname, '../uploads', mediaToDelete.uploadedFileName);
-  
-      try {
-        await fs.promises.unlink(filePath);
-        res.status(200).json({ message: 'Media deleted successfully' });
-      } catch (fileError) {
-        console.error('Error deleting files:', fileError);
-        res.status(500).json({ error: 'Error deleting media from the server' });
-      }
-    } catch (error) {
-      console.error('Error deleting media:', error);
-      res.status(500).json({ error: 'An internal server error occurred' });
+    if (!id) {
+        return res.status(400).json({ error: "Missing ID" })
     }
-  });
+    try {
+        const mediaToDelete = await Media.findByIdAndDelete(id);
+
+        if (!mediaToDelete) {
+            return res.status(404).json({ error: 'Media not found.' });
+        }
+
+        const filePath = path.join(__dirname, '../uploads', mediaToDelete.uploadedFileName);
+
+        try {
+            await fs.promises.unlink(filePath);
+            res.status(200).json({ message: 'Media deleted successfully' });
+        } catch (fileError) {
+            console.error('Error deleting files:', fileError);
+            res.status(500).json({ error: 'Error deleting media from the server' });
+        }
+    } catch (error) {
+        console.error('Error deleting media:', error);
+        res.status(500).json({ error: 'An internal server error occurred' });
+    }
+});
 
 module.exports = router;

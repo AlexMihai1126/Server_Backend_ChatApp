@@ -9,12 +9,19 @@ const checkAuth = require('../middleware/checkAuth');
 
 router.post('/register', async (req, res) => {
   const { nume, prenume, username, email, password } = req.body;
-
+  console.log(req.body);
+  if (!nume || !prenume || !username || !email || !password) {
+    return res.status(400).json({ error: "Not all parameters are filled." });
+  }
   try {
     const existingUser = await User.findOne({ $or: [{ username: username }, { email: email }] });
 
     if (existingUser) {
       return res.status(400).json({ error: 'Username or email is already taken' });
+    }
+
+    if(password.length < 8){
+      return res.status(400).json({error:"Password must be at least 8 characters."});
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
@@ -81,7 +88,7 @@ router.get('/data', checkAuth, (req, res) => {
 router.delete('/delete', checkAuth, async (req, res) => {
   try {
     const userToDelete = await User.findOneAndDelete({ username: req.user.username });
-    if (userToDelete == null) {
+    if (!userToDelete) {
       res.status(404).json({ error: 'User not found.' });
     } else {
       res.status(200).json({ message: 'User deleted successfully' });
@@ -95,6 +102,33 @@ router.delete('/delete', checkAuth, async (req, res) => {
 
 router.get('/confirm', async (req, res) => {
   const { token } = req.query;
+  const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+  if (!uuidPattern.test(token)) {
+    return res.status(400).json({ error: 'Invalid token' });
+  }
+
+  try {
+    const user = await User.findOne({ creationToken: token });
+    if (!user) {
+      return res.status(400).json({ error: 'Invalid token' });
+    }
+
+    if (user.confirmed) {
+      return res.status(400).json({ error: 'Account already confirmed' });
+    }
+
+    user.confirmed = true;
+    await user.save();
+    res.status(200).json({ message: 'Email confirmed successfully' });
+  } catch (error) {
+    console.error('Confirmation error:', error);
+    res.status(500).json({ error: 'An internal server error occurred' });
+  }
+});
+
+router.get('/confirm2', async (req, res) => {
+  const { token } = req.body;
   const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
   if (!uuidPattern.test(token)) {

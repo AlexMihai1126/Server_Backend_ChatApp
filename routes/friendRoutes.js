@@ -6,9 +6,12 @@ const checkAuth = require('../middleware/checkAuth');
 
 router.post("/add", checkAuth, async (req, res) => {
     const { person2 } = req.body;
+    if(!person2){
+        return res.status(400).json({error:"Missing person to add."});
+    }
     try {
         const p2 = await User.findOne({ username: person2 }).lean();
-        if (p2 == null) {
+        if (!p2) {
             res.status(404).json({ error: "Could not find the person to add." });
         } else {
             if (req.user.id == p2._id) {
@@ -20,7 +23,7 @@ router.post("/add", checkAuth, async (req, res) => {
                         { person1: p2._id, person2: req.user.id }
                     ]
                 }).lean();
-                if (existingFriendship != null) {
+                if (existingFriendship) {
                     res.status(400).json({ message: "Already friends." });
                 } else {
                     const newFriendship = new Friend({
@@ -57,7 +60,7 @@ router.get("/get", checkAuth, async (req, res) => {
                 select: 'username'
             })
             .lean();
-        if (friends == null) {
+        if (!friends) {
             res.status(404).json({ error: "User does not have friends :( " });
         } else {
             const friendsData = friends.map(friend => friend.person2);
@@ -72,7 +75,9 @@ router.get("/get", checkAuth, async (req, res) => {
 
 router.delete("/delete/:id", checkAuth, async (req, res) => {
     const { id } = req.params;
-    console.log(req.user);
+    if(!id){
+        return res.status(400).json({error:"Missing ID"});
+    }
     try {
         
         const deletedFriendship = await Friend.findOneAndDelete({
