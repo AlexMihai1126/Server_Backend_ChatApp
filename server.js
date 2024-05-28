@@ -17,6 +17,9 @@ if (!fs.existsSync("./uploads/rescaled")) {
   fs.mkdirSync("uploads/rescaled");
 }
 
+if (!fs.existsSync("./uploads/profilepics")) {
+  fs.mkdirSync("uploads/profilepics");
+}
 const app = express();
 app.use(cors({
   origin: `*`,
