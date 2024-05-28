@@ -3,14 +3,14 @@ const router = express.Router();
 const { Message } = require('../db_models/Message');
 const checkAuth = require ('../middleware/checkAuth');
 
-router.post('/new', async (req, res) => {
-    const { senderId, recipientId, content, mediaId } = req.body;
+router.post('/new', checkAuth, async (req, res) => {
+    const { recipientId, content, mediaId } = req.body;
     if(!recipientId){
         return res.status(400).json({error:"No recipient."});
     }
 
     try {
-        const newMessage = await Message.create({ senderId, recipientId, content, mediaId });
+        const newMessage = await Message.create({ senderId:req.user.id, recipientId, content, mediaId });
 
         res.status(201).json({ message: newMessage });
     } catch (error) {
@@ -19,7 +19,7 @@ router.post('/new', async (req, res) => {
     }
 });
 
-router.delete('/delete/:id', async (req, res) => {
+router.delete('/delete/:id', checkAuth, async (req, res) => {
     const { id } = req.params;
     if(!id){
         return res.status(400).json({error:"Missing ID"});
@@ -31,7 +31,11 @@ router.delete('/delete/:id', async (req, res) => {
         if (!messageToDelete) {
             res.status(404).json({ error: 'Message not found.' });
         } else {
-            res.status(200).json({ message: 'Message deleted successfully' });
+            if(messageToDelete._id != req.user.id){
+                res.status(403).json({error:"You can't delete a message that is not yours."});
+            } else {
+                res.status(200).json({ message: 'Message deleted successfully' });
+            }
         }
 
     } catch (error) {
