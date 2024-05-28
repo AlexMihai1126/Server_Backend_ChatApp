@@ -9,7 +9,6 @@ const checkAuth = require('../middleware/checkAuth');
 
 router.post('/register', async (req, res) => {
   const { nume, prenume, username, email, password } = req.body;
-  console.log(req.body);
   if (!nume || !prenume || !username || !email || !password) {
     return res.status(400).json({ error: "Not all parameters are filled." });
   }
@@ -20,8 +19,8 @@ router.post('/register', async (req, res) => {
       return res.status(400).json({ error: 'Username or email is already taken' });
     }
 
-    if(password.length < 8){
-      return res.status(400).json({error:"Password must be at least 8 characters."});
+    if (password.length < 8) {
+      return res.status(400).json({ error: "Password must be at least 8 characters." });
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
@@ -78,12 +77,31 @@ router.post('/login', async (req, res) => {
   }
 });
 
-router.get('/data', checkAuth, (req, res) => {
+router.get('/tokendata', checkAuth, (req, res) => {
   res.json({
-    message: 'Successful log in',
     user: req.user
   });
 });
+
+router.get('/getdata/:id', async (req, res) => {
+  const { id } = req.params;
+  if (!id) {
+    res.status(400).json({ error: "Missing ID" });
+  } else {
+    const requestedUser = await User.findById(id);
+    if (!requestedUser) {
+      res.status(404).json({ error: "Could not find specified user." });
+    } else {
+      res.status(200).json({
+        userId: requestedUser._id,
+        username: requestedUser.username,
+        nume: requestedUser.nume,
+        prenume: requestedUser.prenume,
+        picture: requestedUser.picture
+      });
+    }
+  }
+})
 
 router.delete('/delete', checkAuth, async (req, res) => {
   try {
@@ -127,7 +145,7 @@ router.get('/confirm', async (req, res) => {
   }
 });
 
-router.get('/confirm2', async (req, res) => {
+router.get('/confirm-ui', async (req, res) => {
   const { token } = req.body;
   const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 

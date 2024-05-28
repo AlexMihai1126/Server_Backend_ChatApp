@@ -11,6 +11,7 @@ const UserSchema = new Schema({
     password: { type: String, required: true },
     confirmed: { type: Boolean, default: false },
     creationToken: { type: String, default: uuidv4 },
+    picture : {type:mongoose.ObjectId},
     registerTimestamp: { type: Date, default: Date.now },
 }, { collection: 'users' });
 
