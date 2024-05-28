@@ -10,14 +10,17 @@ const friendRoutes = require('./routes/friendRoutes');
 const fs = require('fs');
 
 if (!fs.existsSync("./uploads")) {
+  console.log("[SERVER] Creating uploads folder");
   fs.mkdirSync("uploads");
 }
 
 if (!fs.existsSync("./uploads/rescaled")) {
+  console.log("[SERVER] Creating uploads/rescaled folder");
   fs.mkdirSync("uploads/rescaled");
 }
 
 if (!fs.existsSync("./uploads/profilepics")) {
+  console.log("[SERVER] Creating uploads/profilepics folder");
   fs.mkdirSync("uploads/profilepics");
 }
 const app = express();

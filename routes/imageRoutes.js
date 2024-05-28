@@ -5,24 +5,23 @@ const fs = require('fs');
 const sharp = require('sharp');
 const { Media } = require('../db_models/Media');
 const checkAuth = require('../middleware/checkAuth');
+const generateFilename = require('../helpers/generateUniqueFilename');
 
 router.post('/uploadb64', checkAuth, async (req, res) => {
   const { image, fileName } = req.body;
 
-    if (!image || !fileName) {
-      return res.status(400).json({ error: 'Image and filename are required' });
-    }
+  if (!image || !fileName) {
+    return res.status(400).json({ error: 'Image and filename are required' });
+  }
   try {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    const ext = path.extname(fileName);
-    const standardFileName = `file-${uniqueSuffix}${ext}`;
-    const filePath = path.join(__dirname, '../uploads', standardFileName);
+    const generatedName = generateFilename("file", fileName);
+    const filePath = path.join(__dirname, '../uploads', generatedName);
 
     const buffer = Buffer.from(image, 'base64');
 
     await fs.promises.writeFile(filePath, buffer);
 
-    const resizedFileName = `rescaled_${standardFileName}`;
+    const resizedFileName = `rescaled_${generatedName}`;
     const resizedFilePath = path.join(__dirname, '../uploads', 'rescaled', resizedFileName);
 
     await sharp(filePath)
@@ -30,7 +29,7 @@ router.post('/uploadb64', checkAuth, async (req, res) => {
       .toFile(resizedFilePath);
 
     const newMedia = new Media({
-      uploadedFileName: standardFileName,
+      uploadedFileName: generatedName,
       owner: req.user.id
     });
     await newMedia.save();
@@ -44,8 +43,8 @@ router.post('/uploadb64', checkAuth, async (req, res) => {
 
 router.delete('/delete/:id', checkAuth, async (req, res) => {
   const { id } = req.params;
-  if(!id){
-    return res.status(400).json({error:"Missing ID"});
+  if (!id) {
+    return res.status(400).json({ error: "Missing ID" });
   }
 
   try {
@@ -60,12 +59,13 @@ router.delete('/delete/:id', checkAuth, async (req, res) => {
       return res.status(403).json({ error: "Not your file!" });
     }
 
-    const filePath = path.join(__dirname, '../uploads', mediaToDelete.uploadedFileName);
-    const resizedFilePath = path.join(__dirname, '../uploads', 'rescaled', `rescaled_${mediaToDelete.uploadedFileName}`);
-
     try {
+      const filePath = path.join(__dirname, '../uploads', mediaToDelete.uploadedFileName);
+      const resizedFilePath = path.join(__dirname, '../uploads', 'rescaled', `rescaled_${mediaToDelete.uploadedFileName}`);
+
       await fs.promises.unlink(filePath);
       await fs.promises.unlink(resizedFilePath);
+
       res.status(200).json({ message: 'Image deleted successfully' });
     } catch (fileError) {
       console.error('Error deleting files:', fileError);

@@ -10,6 +10,7 @@ const jwt = require('jsonwebtoken');
 const { v4: uuidv4 } = require('uuid');
 const sendConfirmationEmail = require('../nodemailer/sender');
 const checkAuth = require('../middleware/checkAuth');
+const generateFilename = require ('../helpers/generateUniqueFilename');
 
 router.post('/register', async (req, res) => {
   const { nume, prenume, username, email, password } = req.body;
@@ -238,10 +239,8 @@ router.post('/setpfp', checkAuth, async (req, res) => {
       }
     }
 
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    const ext = path.extname(fileName);
-    const standardFileName = `pfp-${uniqueSuffix}${ext}`;
-    const resizedFilePath = path.join(__dirname, '../uploads', 'profilepics', standardFileName);
+    const generatedName = generateFilename("pfp",fileName);
+    const resizedFilePath = path.join(__dirname, '../uploads', 'profilepics', generatedName);
     const buffer = Buffer.from(image, 'base64');
 
     await sharp(buffer)
@@ -249,7 +248,7 @@ router.post('/setpfp', checkAuth, async (req, res) => {
       .toFile(resizedFilePath);
 
     const newMedia = new Media({
-      uploadedFileName: standardFileName,
+      uploadedFileName: generatedName,
       owner: userData._id
     });
     await newMedia.save();
