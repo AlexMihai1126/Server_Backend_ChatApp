@@ -31,7 +31,7 @@ router.delete('/delete/:id',checkAuth, async (req, res) => {
       res.status(404).json({ error: 'Conversation not found.' });
     }else{
       if(conversationToDelete.creator == req.user.id){
-        conversationToDelete.delete();
+        conversationToDelete.deleteOne();
         res.status(200).json({ message: 'Conversation deleted successfully' });
       } else {
         res.status(403).json({error:"You are not the owner of this group chat, so you can't delete it."})
