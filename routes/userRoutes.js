@@ -156,7 +156,7 @@ router.get('/confirm', async (req, res) => {
   }
 });
 
-router.get('/confirm-ui', async (req, res) => {
+router.post('/confirm-ui', async (req, res) => {
   const { token } = req.body;
   const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
