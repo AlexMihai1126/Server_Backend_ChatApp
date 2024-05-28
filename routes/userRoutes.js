@@ -83,7 +83,18 @@ router.get('/tokendata', checkAuth, (req, res) => {
   });
 });
 
-router.get('/getdata/:id', async (req, res) => {
+router.get('/is-trusted', checkAuth, async (req, res) =>{
+  try{
+    const userData = await User.findById(req.user.id);
+    return res.status(200).json({admin:userData.admin});
+  }
+  catch(error){
+    console.error('Trusted user error:', error);
+    res.status(500).json({ error: 'An internal server error occurred' });
+  }
+})
+
+router.get('/getdata/:id',checkAuth, async (req, res) => {
   const { id } = req.params;
   if (!id) {
     res.status(400).json({ error: "Missing ID" });
