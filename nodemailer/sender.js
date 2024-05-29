@@ -1,5 +1,6 @@
 const transporter = require('./nodemailer');
 require('dotenv').config();
+const modulePrefix = "[EmailSender]";
 
 async function sendConfirmationEmail(email, token) {
     try {

@@ -3,6 +3,7 @@ const router = express.Router();
 const { Message } = require('../db_models/Message');
 const { Conversation } = require('../db_models/Conversation');
 const checkAuth = require('../middleware/checkAuth');
+const modulePrefix = "[ConversationRoutes]";
 
 router.post('/new', checkAuth, async (req, res) => {
   const { members } = req.body;

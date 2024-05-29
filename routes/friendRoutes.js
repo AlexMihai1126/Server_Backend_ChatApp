@@ -3,6 +3,7 @@ const router = express.Router();
 const User = require('../db_models/User');
 const Friend = require('../db_models/Friend');
 const checkAuth = require('../middleware/checkAuth');
+const modulePrefix = "[FriendRoutes]";
 
 router.post("/add", checkAuth, async (req, res) => {
     const { person2 } = req.body;

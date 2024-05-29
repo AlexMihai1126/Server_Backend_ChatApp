@@ -4,6 +4,7 @@ const multer = require('multer');
 const path = require('path');
 const { Media } = require('../db_models/Media');
 const fs = require('fs');
+const modulePrefix = "[MediaRoutes]";
 
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {

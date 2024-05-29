@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const { Message } = require('../db_models/Message');
 const checkAuth = require ('../middleware/checkAuth');
+const modulePrefix = "[MessageRoutes]";
 
 router.post('/new', checkAuth, async (req, res) => {
     const { recipientId, content, mediaId } = req.body;
