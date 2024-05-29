@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
-const { Message } = require('../db_models/Message');
-const { Conversation } = require('../db_models/Conversation');
+const Message = require('../db_models/Message');
+const Conversation = require('../db_models/Conversation');
 const checkAuth = require('../middleware/checkAuth');
 const modulePrefix = "[ConversationRoutes]";
 
@@ -12,7 +12,7 @@ router.post('/new', checkAuth, async (req, res) => {
   }
 
   try {
-    const newConversation = await Conversation.create({ creator:req.user.id, members });
+    const newConversation = await Conversation.create({ creator: req.user.id, members });
 
     res.status(201).json({ convId: newConversation._id });
   } catch (error) {
@@ -21,7 +21,7 @@ router.post('/new', checkAuth, async (req, res) => {
   }
 });
 
-router.delete('/delete/:id',checkAuth, async (req, res) => {
+router.delete('/delete/:id', checkAuth, async (req, res) => {
   const { id } = req.params;
   if (!id) {
     return res.status(400).json({ error: "Missing ID" });
@@ -30,12 +30,12 @@ router.delete('/delete/:id',checkAuth, async (req, res) => {
     const conversationToDelete = await Conversation.findById(id);
     if (!conversationToDelete) {
       res.status(404).json({ error: 'Conversation not found.' });
-    }else{
-      if(conversationToDelete.creator == req.user.id){
+    } else {
+      if (conversationToDelete.creator == req.user.id) {
         conversationToDelete.deleteOne();
         res.status(200).json({ message: 'Conversation deleted successfully' });
       } else {
-        res.status(403).json({error:"You are not the owner of this group chat, so you can't delete it."})
+        res.status(403).json({ error: "You are not the owner of this group chat, so you can't delete it." })
       }
     }
   } catch (error) {
@@ -56,10 +56,10 @@ router.get('/mdata/:id', checkAuth, async (req, res) => {
       path: 'creator',
       select: 'username _id'
     })
-    .populate({
-      path: 'members',
-      select: 'username _id'
-    });;
+      .populate({
+        path: 'members',
+        select: 'username _id'
+      });;
 
     if (!conversation) {
       return res.status(404).json({ error: 'Conversation not found' });
@@ -80,11 +80,11 @@ router.get('/mdata/:id', checkAuth, async (req, res) => {
 
 router.get('/messages/:id', checkAuth, async (req, res) => {
   const { id } = req.params;
-  
+
   if (!id) {
     return res.status(400).json({ error: "Missing ID" });
   }
-  
+
   try {
     const conversation = await Conversation.findById(id);
     if (!conversation) {

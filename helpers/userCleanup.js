@@ -1,10 +1,10 @@
+const path = require('path');
+const fs = require('fs');
+const User = require('../db_models/User');
 const Friend = require('../db_models/Friend');
 const Media = require('../db_models/Media');
 const Message = require('../db_models/Message');
 const Conversation = require('../db_models/Conversation');
-const path = require('path');
-const fs = require('fs');
-const User = require('../db_models/User');
 const modulePrefix = "[UserDelete]";
 
 async function removeUserFriendships(userId) {
@@ -31,7 +31,7 @@ async function removeUserMedia(userId) {
 
     try {
         const userMedia = await Media.find({ owner: userId });
-        if(!userMedia){
+        if (!userMedia) {
             console.log("No user media.");
             return;
         }
@@ -58,7 +58,7 @@ async function removeUserMedia(userId) {
     } catch (error) {
         console.error("Error deleting media:", error);
     }
-}
+};
 
 
 async function removeUserMessages(userId) {

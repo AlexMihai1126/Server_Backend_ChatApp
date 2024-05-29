@@ -2,11 +2,11 @@ const express = require('express');
 const router = express.Router();
 const multer = require('multer');
 const path = require('path');
-const { Media } = require('../db_models/Media');
+const Media = require('../db_models/Media');
 const fs = require('fs');
-const checkAuth = require ('../middleware/checkAuth');
+const checkAuth = require('../middleware/checkAuth');
 const modulePrefix = "[MediaRoutes]";
-const generateName = require ('../helpers/generateUniqueFilename');
+const generateName = require('../helpers/generateUniqueFilename');
 
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
@@ -21,18 +21,18 @@ const storage = multer.diskStorage({
 
 const upload = multer({ storage });
 
-router.post('/upload',checkAuth, upload.single('file'), async (req, res) => {
+router.post('/upload', checkAuth, upload.single('file'), async (req, res) => {
     if (!req.file) {
         return res.status(400).json({ error: 'No file uploaded' });
     }
     try {
-        const generatedName = generateName("file",req.file.filename);
+        const generatedName = generateName("file", req.file.filename);
 
         const newMedia = new Media({
             uploadedFileName: generatedName,
-            originalFileName:req.file.filename,
-            fileExtension:path.extname(req.file.filename),
-            owner:req.user.id
+            originalFileName: req.file.filename,
+            fileExtension: path.extname(req.file.filename),
+            owner: req.user.id
         });
         await newMedia.save();
 
@@ -63,7 +63,7 @@ router.get('/get/:id', async (req, res) => {
     }
 });
 
-router.delete('/delete/:id',checkAuth, async (req, res) => {
+router.delete('/delete/:id', checkAuth, async (req, res) => {
     const { id } = req.params;
     if (!id) {
         return res.status(400).json({ error: "Missing ID" })
@@ -75,12 +75,12 @@ router.delete('/delete/:id',checkAuth, async (req, res) => {
             return res.status(404).json({ error: 'Media not found.' });
         }
 
-        if(mediaToDelete.owner != req.user.id){
-            return res.status(403).json({error:"Not your file!"});
+        if (mediaToDelete.owner != req.user.id) {
+            return res.status(403).json({ error: "Not your file!" });
         }
 
         const filePathInit = path.join(__dirname, '../uploads', mediaToDelete.uploadedFileName);
-        const filePathMoved = path.join(__dirname, '../uploads','deleted', mediaToDelete.uploadedFileName);
+        const filePathMoved = path.join(__dirname, '../uploads', 'deleted', mediaToDelete.uploadedFileName);
 
         try {
             await fs.promises.rename(filePathInit, filePathMoved);

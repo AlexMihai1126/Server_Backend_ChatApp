@@ -3,7 +3,7 @@ const router = express.Router();
 const path = require('path');
 const fs = require('fs');
 const sharp = require('sharp');
-const { Media } = require('../db_models/Media');
+const Media = require('../db_models/Media');
 const checkAuth = require('../middleware/checkAuth');
 const generateFilename = require('../helpers/generateUniqueFilename');
 const modulePrefix = "[ImageRoutes]";
@@ -31,7 +31,7 @@ router.post('/uploadb64', checkAuth, async (req, res) => {
 
     const newMedia = new Media({
       uploadedFileName: generatedName,
-      originalFileName:fileName,
+      originalFileName: fileName,
       fileExtension: path.extname(fileName),
       owner: req.user.id
     });
@@ -60,12 +60,12 @@ router.delete('/delete/:id', checkAuth, async (req, res) => {
       try {
         const filePathInit = path.join(__dirname, '../uploads', mediaToDelete.uploadedFileName);
         const resizedFilePathInit = path.join(__dirname, '../uploads', 'rescaled', `rescaled_${mediaToDelete.uploadedFileName}`);
-        const filePathMoved = path.join(__dirname, '../uploads','deleted', mediaToDelete.uploadedFileName);
+        const filePathMoved = path.join(__dirname, '../uploads', 'deleted', mediaToDelete.uploadedFileName);
         const resizedFilePathMoved = path.join(__dirname, '../uploads', 'deleted', `rescaled_${mediaToDelete.uploadedFileName}`);
         await fs.promises.rename(filePathInit, filePathMoved);
-        await fs.promises.rename(resizedFilePathInit,resizedFilePathMoved);
+        await fs.promises.rename(resizedFilePathInit, resizedFilePathMoved);
         await mediaToDelete.deleteOne();
-  
+
         res.status(200).json({ message: 'Image deleted successfully' });
       } catch (fileError) {
         console.error('Error deleting files:', fileError);

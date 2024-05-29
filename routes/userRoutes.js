@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const User = require('../db_models/User');
-const { Media } = require('../db_models/Media');
+const Media = require('../db_models/Media');
 const path = require('path');
 const sharp = require('sharp');
 const fs = require('fs');
@@ -10,8 +10,8 @@ const jwt = require('jsonwebtoken');
 const { v4: uuidv4 } = require('uuid');
 const sendConfirmationEmail = require('../nodemailer/sender');
 const checkAuth = require('../middleware/checkAuth');
-const generateFilename = require ('../helpers/generateUniqueFilename');
-const { cleanupUser } = require('../helpers/userCleanup');
+const generateFilename = require('../helpers/generateUniqueFilename');
+const cleanupUser = require('../helpers/userCleanup');
 const modulePrefix = "[UserRoutes]";
 
 router.post('/register', async (req, res) => {
@@ -90,18 +90,18 @@ router.get('/tokendata', checkAuth, (req, res) => {
   });
 });
 
-router.get('/is-trusted', checkAuth, async (req, res) =>{
-  try{
+router.get('/is-trusted', checkAuth, async (req, res) => {
+  try {
     const userData = await User.findById(req.user.id);
-    return res.status(200).json({admin:userData.admin});
+    return res.status(200).json({ admin: userData.admin });
   }
-  catch(error){
+  catch (error) {
     console.error('Trusted user error:', error);
     res.status(500).json({ error: 'An internal server error occurred' });
   }
 })
 
-router.get('/getdata/:id',checkAuth, async (req, res) => {
+router.get('/getdata/:id', checkAuth, async (req, res) => {
   const { id } = req.params;
   if (!id) {
     res.status(400).json({ error: "Missing ID" });
@@ -193,17 +193,17 @@ router.get('/pfp/:username', async (req, res) => {
     return res.status(400).json({ error: "Missing username" });
   }
   try {
-    const user = await User.findOne({username:usernameRequest}).populate({
-      path:'picture',
-      select:'uploadedFileName'
+    const user = await User.findOne({ username: usernameRequest }).populate({
+      path: 'picture',
+      select: 'uploadedFileName'
     });
     if (!user) {
       return res.status(404).json({ error: 'User not found' });
     }
-    if(!user.picture){
-      return res.status(404).json({error:"User does not have a picture."})
+    if (!user.picture) {
+      return res.status(404).json({ error: "User does not have a picture." })
     }
-    const fileToSend = path.join(__dirname, "../uploads","profilepics", user.picture.uploadedFileName);
+    const fileToSend = path.join(__dirname, "../uploads", "profilepics", user.picture.uploadedFileName);
     res.sendFile(fileToSend);
   } catch (error) {
     console.error('Error retrieving image:', error);
@@ -219,20 +219,20 @@ router.post('/setpfp', checkAuth, async (req, res) => {
   }
   try {
     const userData = await User.findById(req.user.id);
-    if(userData.picture != null){
-      try{
+    if (userData.picture != null) {
+      try {
         const mediaToDelete = await Media.findById(userData.picture);
-        const pfpInit = path.join(__dirname, '../uploads','profilepics', mediaToDelete.uploadedFileName);
-        const pfpMoved = path.join(__dirname, '../uploads','deleted', mediaToDelete.uploadedFileName);
-        await fs.promises.rename(pfpInit,pfpMoved);
+        const pfpInit = path.join(__dirname, '../uploads', 'profilepics', mediaToDelete.uploadedFileName);
+        const pfpMoved = path.join(__dirname, '../uploads', 'deleted', mediaToDelete.uploadedFileName);
+        await fs.promises.rename(pfpInit, pfpMoved);
         await mediaToDelete.deleteOne();
       }
-      catch (error){
+      catch (error) {
         console.error('Error deleting old user pfp:', error);
       }
     }
 
-    const generatedName = generateFilename("pfp",fileName);
+    const generatedName = generateFilename("pfp", fileName);
     const resizedFilePath = path.join(__dirname, '../uploads', 'profilepics', generatedName);
     const buffer = Buffer.from(image, 'base64');
 
@@ -242,14 +242,14 @@ router.post('/setpfp', checkAuth, async (req, res) => {
 
     const newMedia = new Media({
       uploadedFileName: generatedName,
-      originalFileName:fileName,
+      originalFileName: fileName,
       fileExtension: path.extname(fileName),
       owner: userData._id
     });
     await newMedia.save();
     await userData.updateOne({ picture: newMedia._id });
 
-    res.status(200).json({message:"Profile picture saved."});
+    res.status(200).json({ message: "Profile picture saved." });
   } catch (error) {
     console.error('Error setting profile picture:', error);
     res.status(500).json({ error: 'An internal server error occurred' });
