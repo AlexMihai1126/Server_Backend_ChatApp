@@ -11,6 +11,7 @@ const { v4: uuidv4 } = require('uuid');
 const sendConfirmationEmail = require('../nodemailer/sender');
 const checkAuth = require('../middleware/checkAuth');
 const generateFilename = require ('../helpers/generateUniqueFilename');
+const modulePrefix = "[UserRoutes]";
 
 router.post('/register', async (req, res) => {
   const { nume, prenume, username, email, password } = req.body;
@@ -124,8 +125,9 @@ router.delete('/delete', checkAuth, async (req, res) => {
     if(userToDelete.picture != null){
       try{
         const mediaToDelete = await Media.findById(userToDelete.picture);
-        const pfp = path.join(__dirname, '../uploads','profilepics', mediaToDelete.uploadedFileName);
-        await fs.promises.unlink(pfp);
+        const pfpInit = path.join(__dirname, '../uploads','profilepics', mediaToDelete.uploadedFileName);
+        const pfpMoved = path.join(__dirname, '../uploads','deleted', mediaToDelete.uploadedFileName);
+        await fs.promises.rename(pfpInit,pfpMoved);
         await mediaToDelete.deleteOne();
       }
       catch (error){
@@ -230,8 +232,9 @@ router.post('/setpfp', checkAuth, async (req, res) => {
     if(userData.picture != null){
       try{
         const mediaToDelete = await Media.findById(userData.picture);
-        const pfp = path.join(__dirname, '../uploads','profilepics', mediaToDelete.uploadedFileName);
-        await fs.promises.unlink(pfp);
+        const pfpInit = path.join(__dirname, '../uploads','profilepics', mediaToDelete.uploadedFileName);
+        const pfpMoved = path.join(__dirname, '../uploads','deleted', mediaToDelete.uploadedFileName);
+        await fs.promises.rename(pfpInit,pfpMoved);
         await mediaToDelete.deleteOne();
       }
       catch (error){

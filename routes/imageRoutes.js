@@ -6,6 +6,7 @@ const sharp = require('sharp');
 const { Media } = require('../db_models/Media');
 const checkAuth = require('../middleware/checkAuth');
 const generateFilename = require('../helpers/generateUniqueFilename');
+const modulePrefix = "[ImageRoutes]";
 
 router.post('/uploadb64', checkAuth, async (req, res) => {
   const { image, fileName } = req.body;
@@ -54,22 +55,22 @@ router.delete('/delete/:id', checkAuth, async (req, res) => {
     }
 
     if (req.user.id == mediaToDelete.owner) {
-      await mediaToDelete.deleteOne();
+      try {
+        const filePathInit = path.join(__dirname, '../uploads', mediaToDelete.uploadedFileName);
+        const resizedFilePathInit = path.join(__dirname, '../uploads', 'rescaled', `rescaled_${mediaToDelete.uploadedFileName}`);
+        const filePathMoved = path.join(__dirname, '../uploads','deleted', mediaToDelete.uploadedFileName);
+        const resizedFilePathMoved = path.join(__dirname, '../uploads', 'deleted', `rescaled_${mediaToDelete.uploadedFileName}`);
+        await fs.promises.rename(filePathInit, filePathMoved);
+        await fs.promises.rename(resizedFilePathInit,resizedFilePathMoved);
+        await mediaToDelete.deleteOne();
+  
+        res.status(200).json({ message: 'Image deleted successfully' });
+      } catch (fileError) {
+        console.error('Error deleting files:', fileError);
+        res.status(500).json({ error: 'Error deleting image from the server' });
+      }
     } else {
       return res.status(403).json({ error: "Not your file!" });
-    }
-
-    try {
-      const filePath = path.join(__dirname, '../uploads', mediaToDelete.uploadedFileName);
-      const resizedFilePath = path.join(__dirname, '../uploads', 'rescaled', `rescaled_${mediaToDelete.uploadedFileName}`);
-
-      await fs.promises.unlink(filePath);
-      await fs.promises.unlink(resizedFilePath);
-
-      res.status(200).json({ message: 'Image deleted successfully' });
-    } catch (fileError) {
-      console.error('Error deleting files:', fileError);
-      res.status(500).json({ error: 'Error deleting image from the server' });
     }
   } catch (error) {
     console.error('Error deleting image:', error);

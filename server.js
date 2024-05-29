@@ -7,22 +7,14 @@ const imageRoutes = require('./routes/imageRoutes');
 //const mediaRoutes = require('./routes/mediaRoutes');
 const conversationRoutes = require('./routes/conversationRoutes');
 const friendRoutes = require('./routes/friendRoutes');
-const fs = require('fs');
+const makeFolders = require ('./helpers/makeFolders');
+const modulePrefix = "[SERVER/Main]";
 
-if (!fs.existsSync("./uploads")) {
-  console.log("[SERVER] Creating uploads folder");
-  fs.mkdirSync("uploads");
+function preStartupTasks(){
+  console.log(`${modulePrefix} Performing pre-startup tasks.`);
+  makeFolders();
 }
 
-if (!fs.existsSync("./uploads/rescaled")) {
-  console.log("[SERVER] Creating uploads/rescaled folder");
-  fs.mkdirSync("uploads/rescaled");
-}
-
-if (!fs.existsSync("./uploads/profilepics")) {
-  console.log("[SERVER] Creating uploads/profilepics folder");
-  fs.mkdirSync("uploads/profilepics");
-}
 const app = express();
 app.use(cors({
   origin: `*`,
@@ -49,11 +41,12 @@ async function startServer() {
     await connectMongooseDb();
 
     app.listen(PORT, () => {
-      console.log(`Serverul a pornit, port: ${PORT}`);
+      console.log(`${modulePrefix} Started successfully on port: ${PORT}`);
     });
   } catch (error) {
-    console.error('Error starting server:', error);
+    console.error(`${modulePrefix} Error starting:`, error);
   }
 }
 
+preStartupTasks();
 startServer();
