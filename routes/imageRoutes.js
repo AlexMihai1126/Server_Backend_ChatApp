@@ -31,6 +31,8 @@ router.post('/uploadb64', checkAuth, async (req, res) => {
 
     const newMedia = new Media({
       uploadedFileName: generatedName,
+      originalFileName:fileName,
+      fileExtension: path.extname(fileName),
       owner: req.user.id
     });
     await newMedia.save();

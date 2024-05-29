@@ -11,6 +11,7 @@ const { v4: uuidv4 } = require('uuid');
 const sendConfirmationEmail = require('../nodemailer/sender');
 const checkAuth = require('../middleware/checkAuth');
 const generateFilename = require ('../helpers/generateUniqueFilename');
+const { cleanupUser } = require('../helpers/userCleanup');
 const modulePrefix = "[UserRoutes]";
 
 router.post('/register', async (req, res) => {
@@ -122,18 +123,7 @@ router.get('/getdata/:id',checkAuth, async (req, res) => {
 router.delete('/delete', checkAuth, async (req, res) => {
   try {
     const userToDelete = await User.findById(req.user.id);
-    if(userToDelete.picture != null){
-      try{
-        const mediaToDelete = await Media.findById(userToDelete.picture);
-        const pfpInit = path.join(__dirname, '../uploads','profilepics', mediaToDelete.uploadedFileName);
-        const pfpMoved = path.join(__dirname, '../uploads','deleted', mediaToDelete.uploadedFileName);
-        await fs.promises.rename(pfpInit,pfpMoved);
-        await mediaToDelete.deleteOne();
-      }
-      catch (error){
-        console.error('Error deleting user pfp:', error);
-      }
-    }
+    cleanupUser(userToDelete._id);
     await userToDelete.deleteOne();
     res.status(200).json({ message: 'User deleted successfully' });
 
@@ -252,6 +242,8 @@ router.post('/setpfp', checkAuth, async (req, res) => {
 
     const newMedia = new Media({
       uploadedFileName: generatedName,
+      originalFileName:fileName,
+      fileExtension: path.extname(fileName),
       owner: userData._id
     });
     await newMedia.save();
