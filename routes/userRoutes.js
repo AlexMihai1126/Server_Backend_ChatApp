@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const User = require('../db_models/User');
 const Media = require('../db_models/Media');
+const Conversation = require('../db_models/Conversation');
 const path = require('path');
 const sharp = require('sharp');
 const fs = require('fs');
@@ -254,6 +255,26 @@ router.post('/setpfp', checkAuth, async (req, res) => {
     console.error('Error setting profile picture:', error);
     res.status(500).json({ error: 'An internal server error occurred' });
   }
+});
+
+router.get('/all-groups', checkAuth, async (req, res) => {
+  try {
+    const groups = await Conversation.find({
+      $or: [
+        { creator: req.user.id },
+        { members: req.user.id }
+      ]
+    }).select('_id groupName creator').populate({
+      path:'creator',
+      select:'username'
+    });
+
+    res.status(200).json({ groups });
+  } catch (error) {
+    console.error('Error retrieving groups:', error);
+    res.status(500).json({ error: 'An internal server error occurred' });
+  }
+
 });
 
 module.exports = router;
